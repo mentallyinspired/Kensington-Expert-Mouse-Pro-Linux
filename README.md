@@ -1,6 +1,6 @@
 # Kensington Expert Mouse Pro Linux conf
 
-This guide (and config) will give you a fully working Kensington Expert Mouse Pro under Linux.
+This guide (and config) will give you a fully working Kensington Expert Mouse Pro under Linux (USB version).
 
 <img src="https://github.com/s00nice/Kensington-Expert-Mouse-Pro-Linux/blob/main/Kensington_Expert_Mouse_Pro.jpg" width="400">
 
