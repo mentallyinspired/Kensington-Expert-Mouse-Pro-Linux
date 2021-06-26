@@ -4,6 +4,9 @@ This guide (and config) will give you a fully working Kensington Expert Mouse Pr
 
 <img src="https://github.com/s00nice/Kensington-Expert-Mouse-Pro-Linux/blob/main/Kensington_Expert_Mouse_Pro.jpg" width="400">
 
+The numbering of each key are as in the picture above. This is usefull if you want to reasign the functions in conf file under `ButtonMapping`.
+Note that the normal mapping is 1 - 15 in order, but have been rearanged in the conf file for the functionality mentioned bellow.
+
 **With the following settings**
 
 * Key nr 1 for normal keypress
