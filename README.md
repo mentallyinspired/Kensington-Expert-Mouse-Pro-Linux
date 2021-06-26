@@ -15,23 +15,7 @@ This guide (and config) will give you a fully working Kensington Expert Mouse Pr
 
 ## Base config
 
-Download the `Kensington-trackball.conf` file and place it in `/etc/X11/xorg.conf.d/`
-
-```conf
-# This .conf file is for Kensington Expert Mouse Pro and should work as is
-# check for correct MatchProduct name with 'xinput list' if it doesn't work
-# and ammend with the correct name for MatchProduct
-# Read more in 
-
-Section "InputClass"
-  Identifier "Kensington Expert Mouse Pro"
-  Driver "libinput"
-  MatchProduct "Kensington Kensington USB/PS2 Trackball"
-  Option "ScrollMethod" "Button"
-  Option "ScrollButton" "3"
-  Option "ButtonMapping" "1 2 9 4 5 6 7 8 3 10 11 12 13 14 15"
-EndSection
-```
+Download the `kensington-trackball.conf` file and place it in `/etc/X11/xorg.conf.d/`
 
 If the conf doesn't work after restarting x then you need to modify `MatchProduct` or replace it with `MatchUSBID`.
 
