@@ -2,7 +2,7 @@
 
 This guide (and config) will give you a fully working Kensington Expert Mouse Pro under Linux.
 
-![Image of Kensington Expert Mouse Pro](https://github.com/s00nice/Kensington-Expert-Mouse-Pro-Linux/blob/main/Kensington_Expert_Mouse_Pro.jpg)
+![Image of Kensington Expert Mouse Pro](https://github.com/s00nice/Kensington-Expert-Mouse-Pro-Linux/blob/main/Kensington_Expert_Mouse_Pro.jpg){ width=70% }
 
 **With the following settings**
 
