@@ -14,6 +14,7 @@ This guide (and config) will give you a fully working Kensington Expert Mouse Pr
 * Key nr 10-15 (buttons numbered 1-6) mapped to F19-F24
 * Scroll is left as is (key 4 and 5)
 * Key nr 2 (pressing the scroll wheel) for middle mouse click
+* 4 and 5 are left as is and are for scrolling with the scroll wheel
 
 ## Base config
 
