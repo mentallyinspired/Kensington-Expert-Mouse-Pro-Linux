@@ -1,0 +1,23 @@
+#!/bin/sh
+set -eu
+
+failed=0
+
+for file in README.md docs/*.md; do
+  if rg -n '^\$ ' "$file"; then
+    echo "$file: remove shell prompt characters from copyable commands" >&2
+    failed=1
+  fi
+done
+
+if rg -ni 'usefull|reasign|rearr?anged|bellow|trough|ware empty' README.md docs; then
+  echo "Common spelling error found" >&2
+  failed=1
+fi
+
+if ! cmp -s kensington-trackball.conf x11/kensington-trackball.conf; then
+  echo "The root compatibility config and x11 config differ" >&2
+  failed=1
+fi
+
+exit "$failed"

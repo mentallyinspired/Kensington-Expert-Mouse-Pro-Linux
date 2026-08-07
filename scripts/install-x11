@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly default_usb_id="047d:1002"
+readonly default_destination="/etc/X11/xorg.conf.d/90-kensington-trackball.conf"
+
+handedness="right"
+match_mode="product"
+usb_id="$default_usb_id"
+destination="$default_destination"
+dry_run=false
+
+usage() {
+  cat <<'EOF'
+Usage: ./scripts/install-x11 [options]
+
+Install the Kensington Expert Mouse Pro Xorg configuration.
+
+Options:
+  --left-handed         Install the left-handed button layout.
+  --right-handed        Install the right-handed layout (default).
+  --match-usb-id [ID]   Match a USB ID instead of the product name.
+                        The ID defaults to 047d:1002.
+  --destination PATH    Override the installation path (mainly for testing).
+  --dry-run             Print the generated configuration without installing.
+  -h, --help            Show this help.
+
+The installer backs up a different existing destination before replacing it.
+It does not configure the optional F19-F24 mappings; those require recording
+the raw buttons from the physical device.
+EOF
+}
+
+die() {
+  printf 'Error: %s\n' "$*" >&2
+  exit 1
+}
+
+while (($#)); do
+  case "$1" in
+    --left-handed)
+      handedness="left"
+      shift
+      ;;
+    --right-handed)
+      handedness="right"
+      shift
+      ;;
+    --match-usb-id)
+      match_mode="usb"
+      shift
+      if (($#)) && [[ "$1" != --* ]]; then
+        usb_id="$1"
+        shift
+      fi
+      ;;
+    --destination)
+      (($# >= 2)) || die "--destination requires a path"
+      destination="$2"
+      shift 2
+      ;;
+    --dry-run)
+      dry_run=true
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      die "unknown option: $1"
+      ;;
+  esac
+done
+
+[[ "$usb_id" =~ ^[[:xdigit:]]{4}:[[:xdigit:]]{4}$ ]] || \
+  die "USB ID must have the form 047d:1002"
+[[ "$destination" = /* ]] || die "destination must be an absolute path"
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source_config="${script_dir}/../x11/kensington-trackball.conf"
+[[ -r "$source_config" ]] || die "cannot read $source_config"
+
+generated_config="$(mktemp)"
+trap 'rm -f -- "$generated_config"' EXIT
+cp -- "$source_config" "$generated_config"
+
+if [[ "$handedness" == "left" ]]; then
+  sed -i \
+    -e 's/Option "ScrollButton" "3"/Option "ScrollButton" "1"/' \
+    -e 's/Option "ButtonMapping" "1 2 9 4 5 6 7 8 3 10 11 12 13 14 15"/Option "ButtonMapping" "3 2 8 4 5 6 7 9 1 10 11 12 13 14 15"/' \
+    "$generated_config"
+fi
+
+if [[ "$match_mode" == "usb" ]]; then
+  sed -i \
+    "s/MatchProduct \"Kensington Kensington USB\/PS2 Trackball\"/MatchUSBID \"${usb_id}\"/" \
+    "$generated_config"
+fi
+
+if [[ "${XDG_SESSION_TYPE:-}" == "wayland" ]]; then
+  printf '%s\n' \
+    "Warning: the current session is Wayland; this file only affects Xorg." >&2
+fi
+
+if "$dry_run"; then
+  printf '# Destination: %s\n' "$destination"
+  printf '# Layout: %s-handed; match mode: %s\n' "$handedness" "$match_mode"
+  cat -- "$generated_config"
+  exit 0
+fi
+
+install_dir="$(dirname -- "$destination")"
+sudo install -d -m 755 -- "$install_dir"
+
+if sudo test -e "$destination"; then
+  if sudo cmp -s -- "$generated_config" "$destination"; then
+    printf 'Already installed: %s\n' "$destination"
+    exit 0
+  fi
+
+  backup="${destination}.backup.$(date +%Y%m%d-%H%M%S)"
+  sudo cp -a -- "$destination" "$backup"
+  printf 'Backed up the previous configuration to %s\n' "$backup"
+fi
+
+sudo install -m 644 -- "$generated_config" "$destination"
+printf 'Installed %s-handed X11 configuration at %s\n' \
+  "$handedness" "$destination"
+printf '%s\n' "Log out and choose an X11 session, or restart the X server, to apply it."

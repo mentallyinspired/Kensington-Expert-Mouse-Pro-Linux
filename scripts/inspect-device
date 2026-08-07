@@ -1,0 +1,27 @@
+#!/bin/sh
+set -eu
+
+vendor_id="047d"
+product_id="1002"
+
+echo "Looking for Kensington Expert Mouse Pro (${vendor_id}:${product_id})"
+
+if command -v lsusb >/dev/null 2>&1; then
+  lsusb -d "${vendor_id}:${product_id}" || true
+else
+  echo "lsusb is unavailable; install your distribution's usbutils package."
+fi
+
+echo
+echo "Matching libinput devices:"
+if command -v libinput >/dev/null 2>&1; then
+  libinput list-devices | awk '
+    BEGIN { RS=""; IGNORECASE=1 }
+    /kensington/ && /(trackball|expert)/ { print $0 "\n" }
+  '
+else
+  echo "libinput is unavailable; install your distribution's libinput tools package."
+fi
+
+echo "To identify every physical button, run:"
+echo "  sudo libinput debug-events --show-keycodes"

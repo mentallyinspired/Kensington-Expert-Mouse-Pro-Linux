@@ -1,189 +1,134 @@
-# Kensington Expert Mouse Pro Linux conf
+# Kensington Expert Mouse Pro on Linux
 
-This guide (and config) will give you a fully working Kensington Expert Mouse Pro under Linux (USB version).
+Configuration and setup guides for the USB Kensington Expert Mouse Pro on
+X11 and Wayland.
 
-<img src="https://github.com/s00nice/Kensington-Expert-Mouse-Pro-Linux/blob/main/Kensington_Expert_Mouse_Pro.jpg" width="400">
+![Kensington Expert Mouse Pro with numbered buttons](Kensington_Expert_Mouse_Pro.jpg)
 
-The numbering of each key are as in the picture above. This is usefull if you want to reasign the functions in conf file under `ButtonMapping`.
-Note that the normal mapping is 1 - 15 in order, but have been rearanged in the conf file for the functionality mentioned bellow.
+The default project layout provides:
 
-**With the following settings**
+- primary, middle, and secondary click;
+- back and forward buttons where those buttons are not used as the scroll
+  modifier;
+- hold a button and roll the ball for two-axis scrolling;
+- a documented path to map the six blue buttons to F19–F24; and
+- right- and left-handed layouts.
 
-* Key nr 1 for normal keypress
-* Key nr 3 for forward
-* Key nr 3 (while held down) for scrolling with trackball
-* Key nr 8 for back
-* Key nr 9 for right click
-* Key nr 10-15 (buttons numbered 1-6) mapped to F19-F24
-* Key nr 2 (pressing the scroll wheel) for middle mouse click
-* 4 and 5 are left as is, they are for scrolling with the scroll wheel
+The tested device ID is `047d:1002`. Other hardware revisions may use a
+different ID or button codes, so inspect your device before applying a mapping.
 
-## Base config
+## Choose your session
 
-Download the `kensington-trackball.conf` file and place it in `/etc/X11/xorg.conf.d/`
+Check the current session:
 
-If the conf doesn't work after restarting x then you need to modify `MatchProduct` or replace it with `MatchUSBID`.
-
-### Get `MatchProduct` name
-
-Install `xorg-xinput` if not already installed, then run:
-
-```bash
-$ xinput list
+```sh
+printf '%s\n' "${XDG_SESSION_TYPE:-unknown}"
 ```
 
-Which gives:
+Then follow the matching guide:
 
-```bash
-⎡ Virtual core pointer                          id=2    [master pointer  (3)]
-⎜   ↳ Kensington Kensington USB/PS2 Trackball   id=14   [slave  pointer  (2)]
+- **X11:** use the [Xorg setup](#x11-setup).
+- **Wayland:** follow [`docs/wayland.md`](docs/wayland.md) for GNOME, Hyprland,
+  KDE Plasma, Sway, or niri.
+- **Nix/Home Manager:** use the declarative [`docs/nix.md`](docs/nix.md) setup.
+
+An Xorg file does not configure a Wayland compositor. Likewise, `xinput`,
+`xmodmap`, `xbindkeys`, and `xte` cannot provide reliable mappings to native
+Wayland applications.
+
+## Inspect the device
+
+The helper reports the matching USB and libinput devices:
+
+```sh
+./scripts/inspect-device
 ```
 
-The device name should be under `Virtual core pointer` in the output.
-Replace the name in the conf file with the output name
+To identify each physical button, run:
 
-Like so:
-
-```bash
-  MatchProduct "Kensington Kensington USB/PS2 Trackball"
-  # use the output name from 'xinput list'
+```sh
+sudo libinput debug-events --show-keycodes
 ```
 
-### Replace `MatchProduct` with `MatchUSBID` (optional)
+See [`docs/button-layout.md`](docs/button-layout.md) for the expected layout.
 
-First get the USBID of the trackball.
+## X11 setup
 
-```bash
-$ lsusb
+Install the Xorg libinput driver, then run the installer:
+
+```sh
+./scripts/install-x11
 ```
 
-Which gives:
+It installs the right-handed configuration by default. Available modes include:
 
-```bash
-Bus 003 Device 005: ID 047d:1002 Kensington Expert Mouse Pro
+```sh
+./scripts/install-x11 --left-handed
+./scripts/install-x11 --match-usb-id
+./scripts/install-x11 --match-usb-id 047d:1002 --left-handed
+./scripts/install-x11 --dry-run
 ```
 
-Then replace in the conf file
-```bash
-  MatchProduct "Kensington Kensington USB/PS2 Trackball"
+The script validates its arguments, creates the Xorg configuration directory,
+and backs up a different existing destination before replacing it. View all
+options with `./scripts/install-x11 --help`.
+
+To install manually instead, copy the configuration:
+
+```sh
+sudo install -Dm644 x11/kensington-trackball.conf \
+  /etc/X11/xorg.conf.d/90-kensington-trackball.conf
 ```
 
-with
+Log out of the graphical session and log back in. If the rule does not match,
+find the exact product name with:
 
-```bash
-  MatchUSBID "047d:1002"
-  # use your actual USBID, could be the same as this
+```sh
+xinput list
 ```
 
-### Settings for left handed
-
-If you are left handed and want to mirror the settings of the four keys around the trackball then replace `ButtonMapping` and `ScrollButton` with:
+Edit `MatchProduct` in the installed file, or replace it with the USB ID:
 
 ```conf
-  Option "ScrollButton" "1"
-  Option "ButtonMapping" "3 2 8 4 5 6 7 9 1 10 11 12 13 14 15"
+MatchUSBID "047d:1002"
 ```
 
-## Map the top 1-6 buttons to F19-F24 (optional)
+The root-level `kensington-trackball.conf` remains as a compatibility copy for
+links from older versions of this project. The maintained copy is under `x11/`.
 
-Here we will map the blue top buttons (numbered 1-6) to F19 trough F24 which will allow us to make use of them like any other keyboard button. This is useful when assigning keyboard shortcuts.
+### Left-handed X11 layout
 
-### Install dependencies
-
-* xorg-xmodmap
-* xautomation
-* xbindkeys
-
-### Check for unused keycodes
-
-Check with
-
-```bash
-$ xmodmap -pke
-```
-
-Note down six unused keycodes, these will be used for mapping F19-F24.
-
-### Create new keycode bindings for F19-F24
-
-Create and edit file for new keycode assignments
-
-```bash
-$ nano ~/.Xmodmap
-```
-
-Bind F19-F24 keys to unused keycodes, bellow keycodes ware empty for me which I assigned to F19-F24.
+The installer accepts `--left-handed`. For a manual installation, replace the
+two corresponding options with:
 
 ```conf
-keycode 247 = F19
-keycode 248 = F20
-keycode 249 = F21
-keycode 250 = F22
-keycode 252 = F23
-keycode 253 = F24
+Option "ScrollButton" "1"
+Option "ButtonMapping" "3 2 8 4 5 6 7 9 1 10 11 12 13 14 15"
 ```
 
-Then update xmodmap:
+### Extra buttons on X11
 
-```bash
-$ xmodmap ~/.Xmodmap
+The historical `xmodmap`/`xbindkeys` recipe is intentionally no longer the
+primary recommendation. A uinput-based input-remapper preset works across X11
+and Wayland and avoids maintaining two unrelated mappings. Follow
+[`docs/remapping.md`](docs/remapping.md).
+
+## Troubleshooting
+
+See [`docs/troubleshooting.md`](docs/troubleshooting.md). When reporting a
+problem, include the desktop/compositor and version, distribution, USB ID,
+and the relevant `libinput` device and button events.
+
+## Contributing
+
+Reports from additional distributions, compositors, and hardware revisions are
+welcome. Do not commit captured keyboard input or other unrelated events.
+
+Run the local checks before submitting a change:
+
+```sh
+./scripts/check-docs
+shellcheck scripts/*
 ```
 
-Create a new file for mapping F19-F24 to the blue (1-6) buttons on the trackball
-```bash
-$ nano ~/.xbindkeysrc
-```
-
-Map the blue (1-6) keys to F19-F24
-
-```conf
-"xte 'key F19'"
-b:10
-
-"xte 'key F20'"
-b:11
-
-"xte 'key F21'"
-b:12
-
-"xte 'key F22'"
-b:13
-
-"xte 'key F23'"
-b:14
-
-"xte 'key F24'"
-b:15
-
-```
-
-Edit `.xinitrc` to autostart `xbindkeys`
-
-```bash
-$ nano ~/.xinitrc
-```
-add `xbindkeys` BEFORE the line that starts your window manager or DE. This is to ensure that the conf in `~/.xbindkeysrc` gets activated before your window manager starts.
-
-```conf
-xbindkeys
-DEFAULT_SESSION=yourWindowManager
-```
-
-## Check functionality of the 1-6 keys
-
-Run
-
-```bash
-$ xbindkeys --key
-```
-Press one of the six buttons within the rectangular area.
-You should get something like this:
-
-```bash
-"(Scheme function)"
-    m:0x0 + c:247
-    F19
-```
-Which is for button 1 that is mapped to F19 on keycode 247.
-
-Congratulation, you should now have a fully functional Kensington Expert Mouse Pro under Linux.
+This project is available under the [MIT License](LICENSE).
